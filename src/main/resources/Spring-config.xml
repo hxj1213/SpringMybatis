@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        https://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        https://www.springframework.org/schema/aop/spring-aop.xsd
+     ">
+
+    <!-- 引入db.properties -->
+    <context:property-placeholder location="classpath:db.properties"/>
+
+    <!-- 创建数据源 -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${driver}"/>
+        <property name="url" value="${url}"/>
+        <property name="username" value="${user}"/>
+        <property name="password" value="${password}"/>
+    </bean>
+
+    <!-- 创建jdbcTemplate -->
+    <!--<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>-->
+
+    <!-- mybatis和Spring整合的核心   其实就是将sqlSessionFactory的创建交给Spring来做 -->
+    <!-- 创建sqlSessionFactory -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!-- 引入mybatis-config.xml -->
+        <!--<property name="configLocation" value="classpath:mybatis-config.xml"/>-->
+        <property name="configuration" >
+            <bean class="org.apache.ibatis.session.Configuration">
+                <property name="logImpl" value="org.apache.ibatis.logging.log4j.Log4jImpl"></property>
+                <property name="lazyLoadingEnabled" value="true"></property>
+            </bean>
+        </property>
+        <!-- 别名部分  -->
+        <property name="typeAliasesPackage" value="com.hxj.domain"/>
+        <!-- 引入数据源 -->
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 引入映射配置文件 -->
+        <!--<property name="mapperLocations" value="classpath:com/hxj/mapper/*.xml"/>-->
+    </bean>
+
+    <!-- 创建dao层对象 由Spring帮我们自动生成代理  sqlSessionFactory  Mapper接口的路径  -->
+    <bean id="mapperPackage" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <property name="basePackage" value="com.hxj.mapper"/>
+    </bean>
+
+
+    <!-- 扫描注解 -->
+    <context:component-scan base-package="com.hxj"/>
+
+    <!-- 创建事务处理类   切面 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!-- 事务扫描 -->
+    <tx:annotation-driven></tx:annotation-driven>
+
+    <!-- 事务增强 -->
+    <!--<tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="find*" read-only="true" />
+            <tx:method name="*" read-only="false" rollback-for="Exception"/>
+        </tx:attributes>
+    </tx:advice>-->
+
+    <!-- 切面配置 -->
+   <!-- <aop:config>
+        <aop:pointcut id="pt" expression="execution(* com.hxj.service.*.*(..))"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="pt"/>
+    </aop:config>-->
+
+
+</beans>
